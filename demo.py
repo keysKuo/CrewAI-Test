@@ -1,62 +1,101 @@
 from langchain_community.llms import Ollama
 from crewai import Agent, Task, Crew, Process
 from database_schema import schema
-
+from database_connector import db
+import re
 # Define model
 model = Ollama(model="llama3")
+running = True
 
-# Define user input
-user_input = "Listing popular ticket types last month"
+while(running):
+    # Define user input, user input must not be general
+    user_input = str(input())
 
-database_query_generator_agent= Agent(
-    role="Database Query Generator",
-    goal="Generate optimal and syntactically correct SQL queries based on the given schema/database and user input specifications. Be concise and accurate. Do not make up information.",
-    backstory="""
-        You are a SQL expert.
-        You're responsible for creating optimal and syntactically correct SQL queries based on a given database schema.
-        You DO NOT make or generate any DML statements (INSERT, UPDATE, DELETE, DROP etc.) to the database.
-        You should ALWAYS look at the tables in the database to see what you can query.
-        Do NOT skip this step.
+    if(user_input == '.stop'):
+        running = False
 
-        You never query for all columns from a table (DO NOT use "SELECT *"). You must query only the columns that are needed to answer the user question.
-        Unless the user specifies in the question specific columns to obtain, query for at most 5 columns. The order of the results to return the most informative data in the database. The schema's primary key(s) must always be used in SELECT query.
-        Always use 'LIMIT' to limit the out to 20 rows.
-        If there are tables need to be joined, you always use 'JOIN' to join tables.
+    generator= Agent(
+        role="Database Query Generator",
+        goal="Generate optimal and syntactically correct SQL queries based on the given schema and user input specifications. Be concise and accurate. Do NOT make up information.",
+        backstory="""
+            You are an SQL expert.
+            You're responsible for creating optimal and syntactically correct SQL queries based on a given database schemas.
+            You must use exactly the column names in each table of the database.
+        """,
+        verbose=True,
+        allow_delegation=False,
+        llm=model
+    )
 
-        Pay attention to use only the column names you can see in the tables below. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
-        Pay attention to use function to get the current date, if the question involves "today".
-    """,
-    verbose=True,
-    allow_delegation=False,
-    llm=model
-)
+    generator_task = Task(
+        description=f"""You work on this database schema: {schema}. Generate optimimal and syntactically correct SQL queries based on user specifications {user_input}.
+        
+            DO:
+            - Use the exact name of tables and properties, they MUST be exactly the same in the query as in the schema.
+            - Naming table must be unique.
+            - ALWAYS look at the tables and tables' properties in the database schema to see what you can query.
+            - ALWAYS use 'LIMIT' function to limit the out to 20 rows.
+            - Use only the column names you can see existing in the tables. Pay attention to which column is in which table.
+            - Use function to get the current date, if the question involves "today".
+            - If there are tables need to be joined, you always use 'JOIN' function to join tables.
+            - Query only the columns that are needed to answer the user question.
+            - Unless the user specifies in the question specific columns to obtain, display for at most 5 significant columns. 
+            - The order of the results to return the most informative data in the database. The schema's primary key(s) must always be used in SELECT query.
+            - When 'GROUP BY', specifically check if enough essential columns
+            - Return SQL query ONLY.
+            Do NOT skip this step.
 
-database_query_generator_task = Task(
-    description=f"You work on this database schema: {schema}. Generate optimimal and syntactically correct SQL queries based on user specifications {user_input}.",
-    agent=database_query_generator_agent,
-    expected_output="""
-        An optimal and syntactically correct SQL query to retrieve relevant information from the database schema based on the content of the email.
+            Do NOT:
+            - Query for columns or properties that do not exist.
+            - Make or generate any DML statements (INSERT, UPDATE, DELETE, DROP etc.) to the database.
+            - Use SQL subquery.
+            - Change the table's name.
+            - Use columns that not belong to table
+            - Use SELECT *.
+            - Use 'TOP 1'.
+            - Duplicate table name with 'AS'.
+            Do NOT skip this step.
+        """,
+        agent=generator,
+        expected_output="""
+            An optimal and syntactically correct SQL query to retrieve relevant information from the database schema based on the content of the input.
+            Return as markdown.
+        """
+    )
 
-        Never query for all columns from a table. DO NOT use "SELECT *". You must query only the columns that are needed to answer the user question.
-        Unless the user specifies in the question specific columns to obtain, query for at most 5 columns. The order of the results to return the most informative data in the database. The schema's primary key(s) must always be used in SELECT query.
-        Always use 'LIMIT' to limit the out to 20 rows.
-        If there are tables need to be joined, always use 'JOIN' to join tables.
+    crew = Crew(
+        agents=[generator],
+        tasks=[generator_task],
+        verbose=2,
+        process=Process.sequential
+    )
 
-        Pay attention to use only the column names you can see in the tables below. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
-        Pay attention to use date('now') function to get the current date, if the question involves "today".
-    """
-)
+    # Kickoff the process and print the output
+    output = crew.kickoff()
 
-crew = Crew(
-    agents=[database_query_generator_agent],
-    tasks=[database_query_generator_task],
-    verbose=2,
-    process=Process.sequential
-)
+    try:
+        sql_query = ""
+        pattern_1 = re.compile(r'```sql(.*?)```', re.DOTALL)
+        pattern_2 = re.compile(r'```(.*?)```', re.DOTALL)
+        matches_1 = pattern_1.findall(output)
+        matches_2 = pattern_2.findall(output)
+        
+        
+        if len(matches_1) != 0:
+            sql_query = matches_1[0]  
+        elif len(matches_2) != 0:
+            sql_query = matches_2[0]
+        else:
+            print("> No value returns")
 
-# Kickoff the process and print the output
-output = crew.kickoff()
-print(output)
+        final = db.run(sql_query)
+        print(final)
+    except Exception  as e:
+        print("> Please describe your request more specifically")
+    finally:
+        print(output)
+
+
 
 # Responder agent modified to generate optimal queries for the database
 # responder = Agent(

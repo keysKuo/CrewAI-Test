@@ -7,7 +7,7 @@ email = "vietnamese guy sending some cash"
 
 classifier = Agent(
     role = "email classifier",
-    goal = "accurately classify emails based on their important. give every email one of these ratings: import, casual, or spam",
+    goal = "accurately classify emails based on their important. give every email one of these ratings: important, casual, or spam",
     backstory = "You are an AI assistant whose only job is to classify email accuarately and honestly. Do not be afraid to give emails bad rating if they are not important. Your job is to help the user manage their inbox",
     verbose = True,
     allow_delegation = False,
