@@ -12,15 +12,14 @@ database_query_generator_agent= Agent(
     role="Database Query Generator",
     goal="Generate optimal and syntactically correct SQL queries based on the given schema/database and user input specifications. Be concise and accurate. Do not make up information.",
     backstory="""
-        You are a SQL expert. You work on this database schema: {schema}.
-        Create a syntactically correct SQL queries based on a given database schema.
-        You're responsible for creating optimal and syntactically correct SQL queries.
+        You are a SQL expert.
+        You're responsible for creating optimal and syntactically correct SQL queries based on a given database schema.
         You DO NOT make or generate any DML statements (INSERT, UPDATE, DELETE, DROP etc.) to the database.
         You should ALWAYS look at the tables in the database to see what you can query.
         Do NOT skip this step.
 
         You never query for all columns from a table (DO NOT use "SELECT *"). You must query only the columns that are needed to answer the user question.
-        You display only minimum 3 and maximum 5 properties in the schema. The order of the results to return the most informative data in the database. The schema's primary key(s) must always be used in SELECT query.
+        Unless the user specifies in the question specific columns to obtain, query for at most 5 columns. The order of the results to return the most informative data in the database. The schema's primary key(s) must always be used in SELECT query.
         Always use 'LIMIT' to limit the out to 20 rows.
         If there are tables need to be joined, you always use 'JOIN' to join tables.
 
@@ -33,16 +32,16 @@ database_query_generator_agent= Agent(
 )
 
 database_query_generator_task = Task(
-    description="Generate optimimal and syntactically correct SQL queries based on user specifications {user_input}.",
+    description=f"You work on this database schema: {schema}. Generate optimimal and syntactically correct SQL queries based on user specifications {user_input}.",
     agent=database_query_generator_agent,
     expected_output="""
         An optimal and syntactically correct SQL query to retrieve relevant information from the database schema based on the content of the email.
 
         Never query for all columns from a table. DO NOT use "SELECT *". You must query only the columns that are needed to answer the user question.
-        Displays minimum 3 and maximum 5 properties in the schema. The order of the results to return the most informative data in the database. The schema's primary key(s) must always be used in SELECT query.
+        Unless the user specifies in the question specific columns to obtain, query for at most 5 columns. The order of the results to return the most informative data in the database. The schema's primary key(s) must always be used in SELECT query.
         Always use 'LIMIT' to limit the out to 20 rows.
         If there are tables need to be joined, always use 'JOIN' to join tables.
-        
+
         Pay attention to use only the column names you can see in the tables below. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
         Pay attention to use date('now') function to get the current date, if the question involves "today".
     """
