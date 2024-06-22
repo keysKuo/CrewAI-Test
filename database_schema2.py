@@ -1,115 +1,106 @@
 schema2 = """
 
-CREATE TABLE Category (
-	category_id int NOT NULL AUTO_INCREMENT,
-    category_name varchar(50) NOT NULL,
-    
-    PRIMARY KEY (category_id)
+DROP DATABASE ManageTest;
+CREATE DATABASE ManageTest;
+USE ManageTest;
+
+CREATE TABLE Categories (
+    CategoryID INT PRIMARY KEY AUTO_INCREMENT,
+    CategoryName VARCHAR(100) NOT NULL,
+    Description TEXT
 );
 
-CREATE TABLE User (
-	user_id int NOT NULL AUTO_INCREMENT,
-    fullname varchar(255) NOT NULL,
-    phone char(10) NOT NULL,
-    email varchar(30) NOT NULL,
-    address varchar(100) NOT NULL,
-    level int DEFAULT 1,
-    created_at datetime DEFAULT CURRENT_TIMESTAMP,
-    last_login datetime DEFAULT CURRENT_TIMESTAMP,
-    
-    PRIMARY KEY (user_id),
-    KEY email_idx (email)
+-- Create the Products table
+CREATE TABLE Products (
+    ProductID INT PRIMARY KEY AUTO_INCREMENT,
+    ProductName VARCHAR(100) NOT NULL,
+    CategoryID INT,
+    Price DECIMAL(10, 2) NOT NULL,
+    Stock INT NOT NULL,
+    Description TEXT,
+    FOREIGN KEY (CategoryID) REFERENCES Categories(CategoryID)
 );
 
-CREATE TABLE Event (
-	event_id int NOT NULL AUTO_INCREMENT,
-    event_name varchar(100) NOT NULL,
-    occur_date date NOT NULL,
-    occur_time varchar(50) NOT NULL,
-    location varchar(50) NOT NULL,
-    address varchar(255) NOT NULL,
-	introduce text,
-    banner varchar(255) NOT NULL,
-    status varchar(10) NOT NULL CHECK (status IN ('pending', 'published', 'ended')),
-    created_at datetime DEFAULT CURRENT_TIMESTAMP,
-    updated_at datetime DEFAULT CURRENT_TIMESTAMP,
-    author_id int NOT NULL,
-    category_id int NOT NULL,
-    
-    PRIMARY KEY (event_id),
-    CONSTRAINT fk_event_author FOREIGN KEY (author_id) REFERENCES User (user_id),
-    CONSTRAINT fk_event_category FOREIGN KEY (category_id) REFERENCES Category (category_id)
+-- Create the Customers table
+CREATE TABLE Customers (
+    CustomerID INT PRIMARY KEY AUTO_INCREMENT,
+    FirstName VARCHAR(100) NOT NULL,
+    LastName VARCHAR(100) NOT NULL,
+    Email VARCHAR(100) UNIQUE NOT NULL,
+    Password VARCHAR(100) NOT NULL,
+    Address TEXT,
+    Phone VARCHAR(15)
 );
 
-CREATE TABLE Ticket_Type (
-	ticket_type_id int NOT NULL AUTO_INCREMENT,
-    ticket_type_name varchar(100) NOT NULL,
-    event_id int NOT NULL,
-    price int NOT NULL DEFAULT 0,
-	n_sold int NOT NULL DEFAULT 0,
-    n_stock int NOT NULL DEFAULT 0,
-    is_selling boolean NOT NULL DEFAULT false,
-    created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    
-    PRIMARY KEY (ticket_type_id),
-    CONSTRAINT fk_tickettype_event FOREIGN KEY (event_id) REFERENCES Event (event_id)
+-- Create the Orders table
+CREATE TABLE Orders (
+    OrderID INT PRIMARY KEY AUTO_INCREMENT,
+    CustomerID INT,
+    OrderDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    Total DECIMAL(10, 2),
+    Status VARCHAR(50),
+    FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID)
 );
 
-CREATE TABLE Booking (
-	booking_id varchar(20) NOT NULL,
-    customer_id int NOT NULL,
-    payment_method varchar(10) CHECK (payment_method IN ('stripe', 'paypal', 'amazon')),
-    temp_cost int NOT NULL,
-    status varchar(20) CHECK (status IN ('pending', 'completed', 'canceled')) DEFAULT 'pending',
-    created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    
-    PRIMARY KEY (booking_id),
-    CONSTRAINT fk_booking_user FOREIGN KEY (customer_id) REFERENCES User (user_id)
+-- Create the OrderDetails table
+CREATE TABLE OrderDetails (
+    OrderDetailID INT PRIMARY KEY AUTO_INCREMENT,
+    OrderID INT,
+    ProductID INT,
+    Quantity INT NOT NULL,
+    Price DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (OrderID) REFERENCES Orders(OrderID),
+    FOREIGN KEY (ProductID) REFERENCES Products(ProductID)
 );
 
-CREATE TABLE Booking_Detail (
-	booking_id varchar(20) NOT NULL,
-    ticket_type_id int NOT NULL,
-	quantity int NOT NULL,	
-    
-    PRIMARY KEY (booking_id, ticket_type_id),
-    CONSTRAINT fk_bookingdetail_booking FOREIGN KEY (booking_id) REFERENCES Booking (booking_id),
-    CONSTRAINT fk_bookingdetail_tickettype FOREIGN KEY (ticket_type_id) REFERENCES Ticket_Type (ticket_type_id)
-);
+INSERT INTO Categories (CategoryName, Description) VALUES
+('Electronics', 'Devices and gadgets including phones, laptops, and more'),
+('Books', 'Wide range of books from various genres and authors'),
+('Clothing', 'Apparel for men, women, and children'),
+('Home & Kitchen', 'Products for home improvement and kitchen use'),
+('Sports & Outdoors', 'Equipment and gear for outdoor activities and sports');
 
-CREATE TABLE Checkout (
-	checkout_id int NOT NULL AUTO_INCREMENT,
-    booking_id varchar(20) NOT NULL,
-    tax float NOT NULL,
-    total int NOT NULL,
-	created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    
-    PRIMARY KEY (checkout_id),
-    CONSTRAINT fk_checkout_booking FOREIGN KEY (booking_id) REFERENCES Booking (booking_id)
-);
 
-CREATE TABLE Ticket (
-	ticket_id int NOT NULL AUTO_INCREMENT,
-    ticket_type_id int NOT NULL,
-    ticket_code varchar(20) NOT NULL,
-    expiry date NOT NULL,
-    status varchar(20) CHECK (status IN ('available', 'sold')),
-    created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    
-    PRIMARY KEY (ticket_id),
-    CONSTRAINT fk_ticket_tickettype FOREIGN KEY (ticket_type_id) REFERENCES Ticket_Type (ticket_type_id)
-);
+INSERT INTO Products (ProductName, CategoryID, Price, Stock, Description) VALUES
+('Smartphone', 1, 699.99, 50, 'Latest model smartphone with advanced features'),
+('Laptop', 1, 1199.99, 30, 'High-performance laptop suitable for gaming and work'),
+('Novel', 2, 19.99, 100, 'Best-selling novel by a popular author'),
+('T-shirt', 3, 15.99, 200, 'Comfortable cotton t-shirt in various sizes'),
+('Blender', 4, 49.99, 60, 'High-speed blender perfect for making smoothies'),
+('Tent', 5, 89.99, 40, '4-person tent ideal for camping'),
+('Tablet', 1, 499.99, 75, 'Portable tablet with high-resolution display'),
+('Cookbook', 2, 24.99, 120, 'Recipe book with delicious and easy-to-make dishes'),
+('Jeans', 3, 39.99, 150, 'Denim jeans with a stylish fit'),
+('Soccer Ball', 5, 25.99, 80, 'Durable soccer ball for training and matches');
 
-CREATE TABLE Transaction_Detail (
-	checkout_id int NOT NULL,
-    ticket_id int NOT NULL,
-    
-    PRIMARY KEY (checkout_id, ticket_id),
-    CONSTRAINT fk_transactiondetail_checkout FOREIGN KEY (checkout_id) REFERENCES Checkout (checkout_id),
-    CONSTRAINT fk_transactiondetail_ticket FOREIGN KEY (ticket_id) REFERENCES Ticket (ticket_id)
-);
+
+INSERT INTO Customers (FirstName, LastName, Email, Password, Address, Phone) VALUES
+('John', 'Doe', 'john.doe@example.com', 'password123', '123 Main St, Anytown, USA', '555-1234'),
+('Jane', 'Smith', 'jane.smith@example.com', 'password456', '456 Oak St, Anytown, USA', '555-5678'),
+('Alice', 'Johnson', 'alice.johnson@example.com', 'password789', '789 Pine St, Anytown, USA', '555-8765'),
+('Bob', 'Brown', 'bob.brown@example.com', 'password101', '101 Maple St, Anytown, USA', '555-4321'),
+('Charlie', 'Davis', 'charlie.davis@example.com', 'password102', '102 Elm St, Anytown, USA', '555-8764');
+
+
+INSERT INTO Orders (CustomerID, OrderDate, Total, Status) VALUES
+(1, '2023-06-15 14:30:00', 749.98, 'Shipped'),
+(2, '2023-06-16 09:45:00', 19.99, 'Processing'),
+(3, '2023-06-17 12:00:00', 65.98, 'Delivered'),
+(4, '2023-06-18 16:20:00', 119.98, 'Cancelled'),
+(5, '2023-06-19 11:30:00', 89.99, 'Shipped');
+
+
+INSERT INTO OrderDetails (OrderID, ProductID, Quantity, Price) VALUES
+(1, 1, 1, 699.99),
+(1, 3, 1, 19.99),
+(2, 3, 1, 19.99),
+(3, 5, 1, 49.99),
+(3, 9, 1, 15.99),
+(4, 10, 2, 25.99),
+(5, 6, 1, 89.99),
+(5, 2, 1, 1199.99),
+(5, 4, 1, 24.99),
+(5, 7, 1, 499.99);
+
 
 """
