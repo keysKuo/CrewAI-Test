@@ -9,46 +9,24 @@ model = Ollama(model="llama3")
 running = True;
 past_result = ""
 
-while(running):
-    user_input = str(input("Enter your request: "))
-    if user_input == '.stop':
-        running = False
-        continue
-
-    # Define agents
+def generate(question, schema, memory=""):
     generator = Agent(
         role="Database Query Specialist",
         goal="Generate SQL queries based on user input while adhering to strict guidelines.",
         backstory="""
-            You are a database query specialist with extensive experience in creating precise and efficient SQL queries. 
-            Your expertise ensures that every query you generate adheres to the highest standards and rules set by the database schema.
+            You are a database query specialist with extensive experience in creating precise and efficient SQL queries. Your expertise ensures that every query you generate adheres to the highest standards and rules set by the database schema.
         """,
         verbose=True,
         allow_delegation=False,
-        
-        llm=model
-    )
-    extractor = Agent(
-        role = "SQL Query Extractor",
-        goal = """
-            To extract only SQL query code block from a passage or text while adhering to strict guidelines.
-        """,
-        backstory = """
-            You are an SQL queries extractor expert and specialist.
-            You are responsible for extracting ONLY SQL queries code block from a passage or text.
-            You must extract SQL queries and place it in this format ```sql ```.
-        """,
-        verbose=True,
-        allow_delegation=False,
-        llm=model
+        llm=model 
     )
 
     # Define tasks
     generator_task = Task(
         description=f"""
-            Schema: {schema2}. 
-            userQuestion: {user_input}
-            pastResult: {past_result}
+            Schema: {schema}. 
+            userQuestion: {question}
+            pastResult: {memory}
             Generate an SQL query based on the userQuestion and pastResult while strictly adhering to the following rules:
 
             DO:
@@ -65,7 +43,6 @@ while(running):
             - The order of the results to return the most informative data in the database. The schema's primary key(s) must always be used in SELECT query.
             - When 'GROUP BY', specifically check if enough essential columns
             - Return SQL query ONLY.
-            - If userQuestion includes detailed columns, use exactly columns' name or columns' name that are similar to the user's request. No yapping.
             Do NOT skip this step.
 
             Do NOT:
@@ -86,6 +63,22 @@ while(running):
             Only the SQL query is returned. Nothing other than the SQL query is returned.
         """
     )
+
+    extractor = Agent(
+        role = "SQL Query Extractor",
+        goal = """
+            To extract only SQL query code block from a passage or text while adhering to strict guidelines.
+        """,
+        backstory = """
+            You are an SQL queries extractor expert and specialist.
+            You are responsible for extracting ONLY SQL queries code block from a passage or text.
+            You must extract SQL queries and place it in this format ```sql ```.
+        """,
+        verbose=True,
+        allow_delegation=False,
+        llm=model
+    )
+
     extractor_task = Task(
         description = """
             Strictly adhering to the following rules:
@@ -113,7 +106,7 @@ while(running):
     # Kickoff the process and print the output
     output = crew.kickoff()
     past_result = output
-    print("* SQl Query: \n" + output)
+    # print("* SQl Query: \n" + output)
 
     sql_query = ""
     pattern_1 = re.compile(r'```sql(.*?)```', re.DOTALL)
@@ -126,15 +119,150 @@ while(running):
         configs = {
             'host': 'localhost',
             'user': 'root',
-            'password': 'admin',
+            'password': '9952811',
             'database': 'ManageTest',
             'ssql': sql_query
         }
-        result = DB.query(configs)
+        execute = DB.query(configs)
 
-        print("* Records:")
-        for row in result:
-            print(row)
+        # return test result
+        d = dict()
+        d['output'] = output
+        d['execute'] = execute
+        return d
+
+        # print("* Records:")
+        # for row in result:
+        #     print(row)
     except Exception as e:
         print(e)
+
+# while(running):
+#     user_input = str(input("Enter your request: "))
+#     if user_input == '.stop':
+#         running = False
+#         continue
+
+#     # Define agents
+#     generator = Agent(
+#         role="Database Query Specialist",
+#         goal="Generate SQL queries based on user input while adhering to strict guidelines.",
+#         backstory="""
+#             You are a database query specialist with extensive experience in creating precise and efficient SQL queries. 
+#             Your expertise ensures that every query you generate adheres to the highest standards and rules set by the database schema.
+#         """,
+#         verbose=True,
+#         allow_delegation=False,
+        
+#         llm=model
+#     )
+#     extractor = Agent(
+#         role = "SQL Query Extractor",
+#         goal = """
+#             To extract only SQL query code block from a passage or text while adhering to strict guidelines.
+#         """,
+#         backstory = """
+#             You are an SQL queries extractor expert and specialist.
+#             You are responsible for extracting ONLY SQL queries code block from a passage or text.
+#             You must extract SQL queries and place it in this format ```sql ```.
+#         """,
+#         verbose=True,
+#         allow_delegation=False,
+#         llm=model
+#     )
+
+#     # Define tasks
+#     generator_task = Task(
+#         description=f"""
+#             Schema: {schema2}. 
+#             userQuestion: {user_input}
+#             pastResult: {past_result}
+#             Generate an SQL query based on the userQuestion and pastResult while strictly adhering to the following rules:
+
+#             DO:
+#             - Use the exact name of tables and properties, they MUST be exactly the same in the query as in the schema.
+#             - ALWAYS look at the tables and tables' properties in the database schema to see what you can query.
+#             - Use only the column names you can see existing in the tables. 
+#             - Pay attention to which column is in which table.
+#             - Naming table must be unique.
+#             - ALWAYS use 'LIMIT' function to limit the out to 20 rows.
+#             - Use function to get the current date, if the question involves "today".
+#             - If there are tables need to be joined, you always use 'JOIN' function to join tables.
+#             - Query only the columns that are needed to answer the user question.
+#             - Unless the user specifies in the question specific columns to obtain, display for at most 5 significant columns. 
+#             - The order of the results to return the most informative data in the database. The schema's primary key(s) must always be used in SELECT query.
+#             - When 'GROUP BY', specifically check if enough essential columns
+#             - Return SQL query ONLY.
+#             - If userQuestion includes detailed columns, use exactly columns' name or columns' name that are similar to the user's request. No yapping.
+#             Do NOT skip this step.
+
+#             Do NOT:
+#             - Query for columns or properties that do not exist.
+#             - Make or generate any DML statements (INSERT, UPDATE, DELETE, DROP etc.) to the database.
+#             - Use SQL subquery.
+#             - Change the table's name.
+#             - Use columns that not belong to table
+#             - Use SELECT *.
+#             - Use 'TOP 1'.
+#             - Duplicate table names.
+#             - Return any values beside the SQL query.
+#             Do NOT skip this step.
+#         """,
+#         agent=generator,
+#         expected_output="""
+#             An optimal and syntactically correct SQL query to retrieve relevant information from the database schema based on the content of the user input.
+#             Only the SQL query is returned. Nothing other than the SQL query is returned.
+#         """
+#     )
+#     extractor_task = Task(
+#         description = """
+#             Strictly adhering to the following rules:
+#                 - Receive the output from 'generator' agent and extract ONLY the SQL queries code block.
+#                 - Place the SQL queries code block inside this format ```sql ```.
+#                 - Below the ```sql ``` is the explaination for the SQL queries code block.
+#                 Do NOT skip this step.
+#         """,
+#         agent=extractor,
+#         expected_output = """
+#             SQL queries code block generated by 'generator' agent in this ```sql ``` format.
+#             With SQL queries code block exaplaination.
+#         """,
+#         context = [generator_task]
+#     )
+
+#     # Define crew
+#     crew = Crew(
+#         agents=[generator, extractor],
+#         tasks=[generator_task, extractor_task],
+#         verbose=2,
+#         process=Process.sequential
+#     )
+
+#     # Kickoff the process and print the output
+#     output = crew.kickoff()
+#     past_result = output
+#     print("* SQl Query: \n" + output)
+
+#     sql_query = ""
+#     pattern_1 = re.compile(r'```sql(.*?)```', re.DOTALL)
+#     matches_1 = pattern_1.findall(output)
+#     if len(matches_1) != 0:
+#         sql_query = matches_1[0]  
+
+#     try:
+#         DB = Database("mysql")
+#         configs = {
+#             'host': 'localhost',
+#             'user': 'root',
+#             'password': 'admin',
+#             'database': 'ManageTest',
+#             'ssql': sql_query
+#         }
+#         result = DB.query(configs)
+
+#         print("* Records:")
+#         for row in result:
+#             print(row)
+#     except Exception as e:
+#         print(e)
     

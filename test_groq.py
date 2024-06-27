@@ -83,7 +83,7 @@ def generate(question, schema, memory=""):
         configs = {
             'host': 'localhost',
             'user': 'root',
-            'password': 'admin',
+            'password': '9952811',
             'database': 'ManageTest',
             'ssql': output
         }
