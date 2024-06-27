@@ -10,16 +10,8 @@ from Database import Database
 
 # Define model
 # model = Ollama(model="llama3")
-running = True;
-past_result = ""
 
-while(running):
-    user_input = str(input("Enter your request: "))
-    if user_input == '.stop':
-        running = False
-        continue
-
-    # Define agents
+def generate(question, schema, memory=""):
     generator = Agent(
         role="Database Query Specialist",
         goal="Generate SQL queries based on user input while adhering to strict guidelines.",
@@ -29,13 +21,13 @@ while(running):
         verbose=True,
         allow_delegation=False,   
     )
- 
+
     # Define tasks
     generator_task = Task(
         description=f"""
-            Schema: {schema2}. 
-            userQuestion: {user_input}
-            pastResult: {past_result}
+            Schema: {schema}. 
+            userQuestion: {question}
+            pastResult: {memory}
             Generate an SQL query based on the userQuestion and pastResult while strictly adhering to the following rules:
 
             DO:
@@ -84,24 +76,40 @@ while(running):
     # Kickoff the process and print the output
     output = crew.kickoff()
     past_result = output
-    print("* SQl Query: \n" + output)
+    # print("* SQl Query: \n" + output)
 
     try:
         DB = Database("mysql")
         configs = {
             'host': 'localhost',
             'user': 'root',
-            'password': '9952811',
+            'password': 'admin',
             'database': 'ManageTest',
             'ssql': output
         }
-        result = DB.query(configs)
+        execute = DB.query(configs)
 
-        print("* Records:")
-        for row in result:
-            print(row)
+        # return test result
+        d = dict()
+        d['output'] = output
+        d['execute'] = execute
+        return d
+
+        # print("* Records:")
+        # for row in result:
+        #     print(row)
     except Exception as e:
         print(e)
+
+# past_result = ""
+
+# user_input = str(input("Enter your request: "))
+# if user_input == '.stop':
+#     running = False
+#     continue
+
+# Define agents
+
 
     # Query Database for output
     

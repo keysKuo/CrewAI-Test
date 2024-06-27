@@ -126,7 +126,7 @@ while(running):
         configs = {
             'host': 'localhost',
             'user': 'root',
-            'password': '9952811',
+            'password': 'admin',
             'database': 'ManageTest',
             'ssql': sql_query
         }
