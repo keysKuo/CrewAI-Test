@@ -110,20 +110,27 @@ while(running):
     # Kickoff the process and print the output
     output = crew.kickoff()
     past_result = output
-    print(">" + output)
+    print("* SQl Query: \n" + output)
+
+    try:
+        DB = Database("mysql")
+        configs = {
+            'host': 'localhost',
+            'user': 'root',
+            'password': '9952811',
+            'database': 'ManageTest',
+            'ssql': output
+        }
+        result = DB.query(configs)
+
+        print("* Records:")
+        for row in result:
+            print(row)
+    except Exception as e:
+        print(e)
 
     # Query Database for output
-    # DB = Database("mysql")
-    # configs = {
-    #     'host': 'localhost',
-    #     'user': 'root',
-    #     'password': 'admin',
-    #     'database': 'ManageTest',
-    #     'ssql': output
-    # }
-    # result = DB.query(configs)
-    # for row in result:
-    #     print(row)
+    
 
 
     

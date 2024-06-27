@@ -1,7 +1,8 @@
 from langchain_community.llms import Ollama
 from crewai import Agent, Task, Crew, Process
 from database_schema2 import schema2
-
+from Database import Database
+import re
 
 # Define model
 model = Ollama(model="llama3")
@@ -112,7 +113,28 @@ while(running):
     # Kickoff the process and print the output
     output = crew.kickoff()
     past_result = output
-    print(output)
+    print("* SQl Query: \n" + output)
 
+    sql_query = ""
+    pattern_1 = re.compile(r'```sql(.*?)```', re.DOTALL)
+    matches_1 = pattern_1.findall(output)
+    if len(matches_1) != 0:
+        sql_query = matches_1[0]  
 
+    try:
+        DB = Database("mysql")
+        configs = {
+            'host': 'localhost',
+            'user': 'root',
+            'password': '9952811',
+            'database': 'ManageTest',
+            'ssql': sql_query
+        }
+        result = DB.query(configs)
+
+        print("* Records:")
+        for row in result:
+            print(row)
+    except Exception as e:
+        print(e)
     
