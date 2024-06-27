@@ -5,7 +5,7 @@ os.environ["OPENAI_API_KEY"] ='gsk_BvQp7aX8OxSKeKI17o21WGdyb3FYpoEe35yaTshD3tQRy
 
 from langchain_community.llms import Ollama
 from crewai import Agent, Task, Crew, Process
-from database_schema2 import schema2
+from db_schema_2 import schema2
 from Database import Database
 
 # Define model

@@ -1,6 +1,6 @@
 from langchain_community.llms import Ollama
 from crewai import Agent, Task, Crew, Process
-from database_schema2 import schema2
+from db_schema_2 import schema2
 from Database import Database
 import re
 
