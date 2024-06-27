@@ -64,7 +64,7 @@ while(running):
             - The order of the results to return the most informative data in the database. The schema's primary key(s) must always be used in SELECT query.
             - When 'GROUP BY', specifically check if enough essential columns
             - Return SQL query ONLY.
-            - If userQuestion includes details columns, use exactly columns' name similar to request. No yapping.
+            - If userQuestion includes detailed columns, use exactly columns' name or columns' name that are similar to the user's request. No yapping.
             Do NOT skip this step.
 
             Do NOT:
