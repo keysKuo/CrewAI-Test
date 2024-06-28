@@ -42,7 +42,8 @@ def generate(question, schema, memory=""):
             - Unless the user specifies in the question specific columns to obtain, display for at most 5 significant columns. 
             - The order of the results to return the most informative data in the database. The schema's primary key(s) must always be used in SELECT query.
             - When 'GROUP BY', specifically check if enough essential columns
-            - Return SQL query ONLY.
+            - Return output step by step from Steps to Explaination then SQL query.
+            - Translate explaination to Vietnamese if userQuestion is Vietnamese
             Do NOT skip this step.
 
             Do NOT:
@@ -54,13 +55,11 @@ def generate(question, schema, memory=""):
             - Use SELECT *.
             - Use 'TOP 1'.
             - Duplicate table names.
-            - Return any values beside the SQL query.
             Do NOT skip this step.
         """,
         agent=generator,
         expected_output="""
-            An optimal and syntactically correct SQL query to retrieve relevant information from the database schema based on the content of the user input.
-            Only the SQL query is returned. Nothing other than the SQL query is returned.
+            Output as markdown format explain how to query work and an optimal, syntactically correct SQL query to retrieve relevant information from the database schema based on the content of the userQuestion
         """
     )
 
@@ -84,7 +83,7 @@ def generate(question, schema, memory=""):
             Strictly adhering to the following rules:
                 - Receive the output from 'generator' agent and extract ONLY the SQL queries code block.
                 - Place the SQL queries code block inside this format ```sql ```.
-                - Below the ```sql ``` is the explaination for the SQL queries code block.
+                - Above the ```sql ``` is the explaination for the SQL queries code block.
                 Do NOT skip this step.
         """,
         agent=extractor,
@@ -97,8 +96,8 @@ def generate(question, schema, memory=""):
 
     # Define crew
     crew = Crew(
-        agents=[generator, extractor],
-        tasks=[generator_task, extractor_task],
+        agents=[generator],
+        tasks=[generator_task],
         verbose=2,
         process=Process.sequential
     )
@@ -113,6 +112,7 @@ def generate(question, schema, memory=""):
     matches_1 = pattern_1.findall(output)
     if len(matches_1) != 0:
         sql_query = matches_1[0]  
+    
 
     try:
         DB = Database("mysql")
@@ -135,6 +135,9 @@ def generate(question, schema, memory=""):
         # for row in result:
         #     print(row)
     except Exception as e:
+        d = dict()
+        d['output'] = output
+        return d
         print(e)
 
 # while(running):
