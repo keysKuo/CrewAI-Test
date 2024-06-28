@@ -41,9 +41,9 @@ def queryMySQL(configs):
 
         c.execute(configs.get('ssql'))
         result = c.fetchall()
-        
+        columns = [i[0] for i in c.description]
         c.close()
 
-        return result
+        return result, columns
     except Error as e:
         print(e)

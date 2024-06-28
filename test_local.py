@@ -122,12 +122,13 @@ def generate(question, schema, memory=""):
             'database': 'ManageTest',
             'ssql': sql_query
         }
-        execute = DB.query(configs)
+        result, columns = DB.query(configs)
 
         # return test result
         d = dict()
         d['output'] = output
-        d['execute'] = execute
+        d['execute'] = result
+        d['columns'] = columns
         return d
 
         # print("* Records:")
