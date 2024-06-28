@@ -10,8 +10,11 @@ def test():
     req = request.json
     question = req['question']
     schema = req['schema']
+    memory = req['memory']
 
-    result = generate(question, schema)
+    # print(memory)
+
+    result = generate(question, schema, memory)
     return result
 
 if __name__ == '__main__':

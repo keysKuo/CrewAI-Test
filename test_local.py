@@ -42,8 +42,7 @@ def generate(question, schema, memory=""):
             - Unless the user specifies in the question specific columns to obtain, display for at most 5 significant columns. 
             - The order of the results to return the most informative data in the database. The schema's primary key(s) must always be used in SELECT query.
             - When 'GROUP BY', specifically check if enough essential columns
-            - Return output step by step from Steps to Explaination then SQL query.
-            - Translate explaination to Vietnamese if userQuestion is Vietnamese
+            - Reply as Vietnamese if userQuestion use Vietnamese language
             Do NOT skip this step.
 
             Do NOT:
@@ -96,8 +95,8 @@ def generate(question, schema, memory=""):
 
     # Define crew
     crew = Crew(
-        agents=[generator],
-        tasks=[generator_task],
+        agents=[generator, extractor],
+        tasks=[generator_task, extractor_task],
         verbose=2,
         process=Process.sequential
     )
@@ -138,7 +137,6 @@ def generate(question, schema, memory=""):
         d = dict()
         d['output'] = output
         return d
-        print(e)
 
 # while(running):
 #     user_input = str(input("Enter your request: "))
