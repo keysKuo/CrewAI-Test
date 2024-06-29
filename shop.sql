@@ -1,9 +1,3 @@
-schema2 = """
-
-DROP DATABASE ManageTest;
-CREATE DATABASE ManageTest;
-USE ManageTest;
-
 CREATE TABLE Categories (
     CategoryID INT PRIMARY KEY AUTO_INCREMENT,
     CategoryName VARCHAR(100) NOT NULL,
@@ -101,6 +95,3 @@ INSERT INTO OrderDetails (OrderID, ProductID, Quantity, Price) VALUES
 (5, 2, 1, 1199.99),
 (5, 4, 1, 24.99),
 (5, 7, 1, 499.99);
-
-
-"""

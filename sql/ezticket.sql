@@ -1,8 +1,3 @@
-schema = """
-DROP DATABASE IF EXISTS EzTicket;
-CREATE DATABASE EzTicket;
-USE Ezticket;
-
 CREATE TABLE Category (
 	category_id int NOT NULL AUTO_INCREMENT,
     category_name varchar(50) NOT NULL,
@@ -224,5 +219,3 @@ VALUES
     (1,2),
     (1,3),
     (2,4);
-
-"""
